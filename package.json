@@ -1,0 +1,52 @@
+{
+  "name": "neo4j-protected-proxy",
+  "version": "0.1.0",
+  "main": "dist/app.js",
+  "scripts": {
+    "dist": "tsc"
+  },
+  "keywords": ["neo4j", "proxy", "keycloak"],
+  "author": "Lars Wilhelmsen <lars@sral.org>",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "keycloak-connect": "^11.0.2",
+    "neo4j-driver": "^4.1.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.11.6",
+    "@babel/node": "^7.10.5",
+    "@babel/plugin-proposal-class-properties": "^7.10.4",
+    "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
+    "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/express": "^4.17.8",
+    "@types/express-session": "^1.17.0",
+    "typescript": "^4.0.2"
+  },
+  "prettier": {
+    "semi": false,
+    "tabWidth": 2,
+    "singleQuote": true
+  },
+  "babel": {
+    "plugins": [
+      "@babel/plugin-proposal-class-properties",
+      "@babel/plugin-proposal-object-rest-spread"
+    ],
+    "presets": [
+      "@babel/preset-typescript",
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
+  }
+}
