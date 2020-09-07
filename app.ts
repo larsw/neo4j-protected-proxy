@@ -1,27 +1,38 @@
 import { AddressInfo } from 'net'
-import express from 'express'
+import path from 'path'
+import { existsSync, readFileSync } from 'fs'
+import express, { json } from 'express'
 import KeycloakConnect from 'keycloak-connect'
 import {
   driver as neo4jDriver,
   auth as neo4jAuth,
   Config as Neo4jConfig,
+  Path,
 } from 'neo4j-driver'
 import { config as dotenvConfig } from 'dotenv'
 
 // Import configuration from environment and json
 dotenvConfig()
 
-const neo4jHost = process.env.NEO4JPROXY_TARGET || "neo4j://localhost"
-const neo4jUserName = process.env.NEO4JPROXY_TARGET_USERNAME || "neo4j"
-const neo4jPassword = process.env.NEO4JPROXY_TARGET_PASSWORD || "neo4j"
-console.log(`${neo4jHost}, ${neo4jUserName}, ${neo4jPassword}`)
+const verbose = process.env.NEO4J_VERBOSE || false
+const neo4jHost = process.env.NEO4JPROXY_TARGET || 'neo4j://localhost'
+const neo4jUserName = process.env.NEO4JPROXY_TARGET_USERNAME || 'neo4j'
+const neo4jPassword = process.env.NEO4JPROXY_TARGET_PASSWORD || 'neo4j'
+const keycloakConfigFile =
+  process.env.NEO4JPROXY_KEYCLOAK_CONFIG_FILE || './keycloak.json'
 
-import keycloakConfig from './keycloak.json'
+if (verbose) {
+  console.log(`${neo4jHost}, ${neo4jUserName}, ${neo4jPassword}`)
+}
+
+// if config file does not exist - error.
+const keycloakConfig = require(keycloakConfigFile)
 
 const app = express()
 
 const neo4jConfig: Neo4jConfig = {
   logging: {
+    level: verbose ? 'debug' : 'info',
     logger: (level, message) => console.log(`[${level}] ${message}`),
   },
 }
@@ -43,11 +54,27 @@ process.on('exit', () => {
   driver.close()
 })
 
+let pkgName = 'neo4j-protected-proxy'
+let pkgVersion = 'unknown'
+let packageJsonPath = path.join(__dirname, './package.json')
+if (existsSync(packageJsonPath)) {
+  const pkg = require(packageJsonPath)
+  pkgName = pkg.name
+  pkgVersion = pkg.version
+} else {
+  packageJsonPath = path.join(path.join(__dirname, '../'), 'package.json')
+  if (existsSync(packageJsonPath)) {
+    const pkg = require(packageJsonPath)
+    pkgName = pkg.name
+    pkgVersion = pkg.version
+    }
+} 
+
 app.use(express.json())
 app.use(keycloak.middleware())
 
-app.get('/', (req, res, _) => {
-  res.json({ message: 'welcome to the neo4j-proxy', version: '0.1.0' })
+app.get('/', (__, res, _) => {
+  res.json({ message: `Welcome to the ${pkgName}`, version: pkgVersion })
   res.status(200).end()
 })
 
@@ -65,9 +92,27 @@ interface QueryRequest {
   parameters?: [string, string][]
 }
 
+interface TokenWithContent extends KeycloakConnect.Token {
+  content: {
+    scope: string | string[]
+  }
+}
+
+function isAuthorized(accessToken: KeycloakConnect.Token, req: express.Request, res: express.Response) {
+  var x = accessToken as TokenWithContent
+  let scopes = []
+  if (Array.isArray(x.content.scope)) {
+    scopes = x.content.scope
+  } else {
+    scopes = x.content.scope.split(' ').map(x => x.trim())
+  }
+  
+  return scopes.indexOf('clientfdfd') > -1
+}
+
 app.post(
   '/execCypher',
-  keycloak.protect('realm:client-user'),
+  keycloak.protect(isAuthorized),
   async (req: express.Request, res: express.Response) => {
     const session = driver.session()
     const tx = session.beginTransaction()

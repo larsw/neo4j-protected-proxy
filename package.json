@@ -5,10 +5,15 @@
   "scripts": {
     "dist": "tsc"
   },
-  "keywords": ["neo4j", "proxy", "keycloak"],
+  "keywords": [
+    "neo4j",
+    "proxy",
+    "keycloak"
+  ],
   "author": "Lars Wilhelmsen <lars@sral.org>",
   "license": "MIT",
   "dependencies": {
+    "commander": "^6.1.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
