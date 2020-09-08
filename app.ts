@@ -2,6 +2,7 @@ import { AddressInfo } from 'net'
 import path from 'path'
 import { existsSync } from 'fs'
 import express from 'express'
+import cors, {CorsOptions} from 'cors'
 import KeycloakConnect, { GaurdFn } from 'keycloak-connect'
 import {
   driver as neo4jDriver,
@@ -29,18 +30,12 @@ const neo4jHost = process.env.NEO4JPROXY_TARGET || 'neo4j://localhost'
 const neo4jUserName = process.env.NEO4JPROXY_TARGET_USERNAME || 'neo4j'
 const neo4jPassword = process.env.NEO4JPROXY_TARGET_PASSWORD || 'neo4j'
 const isProtected = process.env.NEO4JPROXY_PROTECTED || true
-
 const keycloakConfigFile =
   process.env.NEO4JPROXY_KEYCLOAK_CONFIG_FILE || './keycloak.json'
 
 if (verbose) {
   console.log(`${neo4jHost}, ${neo4jUserName}, ${neo4jPassword}`)
 }
-
-// if config file does not exist - error.
-const keycloakConfig = require(keycloakConfigFile)
-
-const app = express()
 
 const neo4jConfig: Neo4jConfig = {
   logging: {
@@ -56,15 +51,10 @@ const driver = neo4jDriver(
   neo4jConfig
 )
 
-const keycloak = new KeycloakConnect({}, keycloakConfig)
+// if config file does not exist - error.
+const keycloakConfig = require(keycloakConfigFile)
 
-// Ensure graceful shutdown in Docker
-process.on('SIGINT', () => {
-  process.exit()
-})
-process.on('exit', () => {
-  driver.close()
-})
+const keycloak = new KeycloakConnect({}, keycloakConfig)
 
 let pkgName = 'neo4j-protected-proxy'
 let pkgVersion = 'unknown'
@@ -86,6 +76,15 @@ const intersects = <T>(arr1: T[], arr2: T[]): boolean => {
   return arr1.some((item) => arr2.includes(item))
 }
 
+
+const app = express()
+
+const corsOpts : CorsOptions = {
+  origin: '*',
+  allowedHeaders: '*',
+  methods: '*'
+}
+app.use(cors())
 app.use(express.json())
 app.use(keycloak.middleware())
 
@@ -149,4 +148,13 @@ app.post(
 const server = app.listen(3000, '0.0.0.0', () => {
   const info = server.address() as AddressInfo
   console.log(`neo4j-proxy up and running on ${info.address}:${info.port}`)
+})
+
+
+// Ensure graceful shutdown in Docker
+process.on('SIGINT', () => {
+  process.exit()
+})
+process.on('exit', () => {
+  driver.close()
 })
