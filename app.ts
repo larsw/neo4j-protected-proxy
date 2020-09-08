@@ -1,15 +1,25 @@
 import { AddressInfo } from 'net'
 import path from 'path'
-import { existsSync, readFileSync } from 'fs'
-import express, { json } from 'express'
-import KeycloakConnect from 'keycloak-connect'
+import { existsSync } from 'fs'
+import express from 'express'
+import KeycloakConnect, { GaurdFn } from 'keycloak-connect'
 import {
   driver as neo4jDriver,
   auth as neo4jAuth,
   Config as Neo4jConfig,
-  Path,
 } from 'neo4j-driver'
 import { config as dotenvConfig } from 'dotenv'
+
+export interface QueryRequest {
+  query: string
+  parameters?: [string, string][]
+}
+
+export interface TokenWithContent extends KeycloakConnect.Token {
+  content: {
+    scope: string | string[]
+  }
+}
 
 // Import configuration from environment and json
 dotenvConfig()
@@ -18,6 +28,8 @@ const verbose = process.env.NEO4J_VERBOSE || false
 const neo4jHost = process.env.NEO4JPROXY_TARGET || 'neo4j://localhost'
 const neo4jUserName = process.env.NEO4JPROXY_TARGET_USERNAME || 'neo4j'
 const neo4jPassword = process.env.NEO4JPROXY_TARGET_PASSWORD || 'neo4j'
+const isProtected = process.env.NEO4JPROXY_PROTECTED || true
+
 const keycloakConfigFile =
   process.env.NEO4JPROXY_KEYCLOAK_CONFIG_FILE || './keycloak.json'
 
@@ -67,8 +79,12 @@ if (existsSync(packageJsonPath)) {
     const pkg = require(packageJsonPath)
     pkgName = pkg.name
     pkgVersion = pkg.version
-    }
-} 
+  }
+}
+
+const intersects = <T>(arr1: T[], arr2: T[]): boolean => {
+  return arr1.some((item) => arr2.includes(item))
+}
 
 app.use(express.json())
 app.use(keycloak.middleware())
@@ -78,7 +94,7 @@ app.get('/', (__, res, _) => {
   res.status(200).end()
 })
 
-app.get('/verifyConnectivity', async (_, res) => {
+app.get('/health', async (_, res) => {
   try {
     const info = await driver.verifyConnectivity()
     res.json(info).status(200).end()
@@ -87,37 +103,38 @@ app.get('/verifyConnectivity', async (_, res) => {
   }
 })
 
-interface QueryRequest {
-  query: string
-  parameters?: [string, string][]
-}
-
-interface TokenWithContent extends KeycloakConnect.Token {
-  content: {
-    scope: string | string[]
+const hasScope = (scope: string | string[]): GaurdFn => {
+  return function (
+    accessToken: KeycloakConnect.Token,
+    req: express.Request,
+    res: express.Response
+  ): boolean {
+    var x = accessToken as TokenWithContent
+    let scopes = []
+    if (Array.isArray(x.content.scope)) {
+      scopes = x.content.scope
+    } else {
+      scopes = x.content.scope.split(' ').map((x) => x.trim())
+    }
+    const expectedScopes = Array.isArray(scope) ? scope : [scope]
+    return intersects(expectedScopes, scopes)
   }
 }
 
-function isAuthorized(accessToken: KeycloakConnect.Token, req: express.Request, res: express.Response) {
-  var x = accessToken as TokenWithContent
-  let scopes = []
-  if (Array.isArray(x.content.scope)) {
-    scopes = x.content.scope
-  } else {
-    scopes = x.content.scope.split(' ').map(x => x.trim())
-  }
-  
-  return scopes.indexOf('clientfdfd') > -1
-}
+const isAuthorized = isProtected ? hasScope('client') : () => true
 
 app.post(
-  '/execCypher',
+  '/cypher',
   keycloak.protect(isAuthorized),
   async (req: express.Request, res: express.Response) => {
     const session = driver.session()
     const tx = session.beginTransaction()
     try {
       const request = req.body as QueryRequest
+      if (!request) {
+        res.json({ message: 'Body must be a QueryRequest.' }).status(400).end()
+        return
+      }
       const result = await tx.run(request.query, request.parameters)
       res.json(result)
       res.status(200).end()

@@ -1,5 +1,7 @@
 FROM node:14-alpine
 
+LABEL maintainer="Lars Wilhelmsen <lars@sral.org>"
+
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json /app/
 
