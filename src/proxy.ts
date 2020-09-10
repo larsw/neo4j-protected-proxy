@@ -55,7 +55,14 @@ const hasScope = (scope: string | string[]): GaurdFn => {
     }
   }
 
-// createProxy
+/**
+ *
+ * Configures a new express router for the proxy.
+ * 
+ * @param neo4j - an instance of the Neo4j driver (from the `neo4j-driver` package)
+ * @param keycloak - an optional instance of the KeycloakConnect instance (from the `keycloak-connect` package). Note that if you leave this one out, the proxy will not be secured.
+ * @returns an express router instance
+*/
 export default (
   neo4j: Driver,
   keycloak?: KeycloakConnect.Keycloak,
