@@ -1,9 +1,11 @@
 {
   "name": "neo4j-protected-proxy",
   "version": "0.1.0",
-  "main": "dist/app.js",
+  "main": "dist/index.js",
+  "types": "types/index.d.ts",
   "scripts": {
-    "dist": "tsc"
+    "build": "tsc",
+    "serve": "babel-node -x \".ts\" src/index.ts"
   },
   "keywords": [
     "neo4j",
