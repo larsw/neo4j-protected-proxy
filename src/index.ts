@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { AddressInfo } from 'net'
 import express from 'express'
 import cors, { CorsOptions } from 'cors'
@@ -17,10 +18,15 @@ export {
 // Import configuration from environment and json
 dotenvConfig()
 
+const readPasswordFromFile = (filename: string): string => {
+  return fs.readFileSync(filename).toString('utf-8')
+}
+
 const verbose = process.env.NEO4J_VERBOSE || false
 const neo4jHost = process.env.NEO4JPROXY_TARGET || 'neo4j://localhost'
 const neo4jUserName = process.env.NEO4JPROXY_TARGET_USERNAME || 'neo4j'
-const neo4jPassword = process.env.NEO4JPROXY_TARGET_PASSWORD || 'neo4j'
+const neo4jPasswordFile = process.env.NEO4JPROXY_TARGET_PASSWORD_FILE || undefined
+const neo4jPassword = neo4jPasswordFile ? readPasswordFromFile(neo4jPasswordFile) : process.env.NEO4JPROXY_TARGET_PASSWORD || 'neo4j'
 const secure = process.env.NEO4JPROXY_SECURE || true
 const keycloakConfigFile =
   process.env.NEO4JPROXY_KEYCLOAK_CONFIG_FILE || './keycloak.json'

@@ -25,16 +25,16 @@ interface QueryRequest {
 
 ## Options / Configuration
 
-| Name                              | Default             | Description                                                                                             |
-|-----------------------------------|---------------------|---------------------------------------------------------------------------------------------------------|
-| `NEO4JPROXY_TARGET`               | `neo4j://localhost` | Neo4J server URL.                                                                                            |
-| `NEO4JPROXY_TARGET_USERNAME`      | `neo4j`             | The user name to authenticate with against the Neo4J server.                                                                                                        |
-| `NEO4JPROXY_TARGET_PASSWORD`      | `neo4j`              | The password to authenticate with against the Neo4J server.                                                                                                         |
+| Name                              | Default             | Description                                                                                              |
+|-----------------------------------|---------------------|----------------------------------------------------------------------------------------------------------|
+| `NEO4JPROXY_TARGET`               | `neo4j://localhost` | Neo4J server URL.                                                                                        |
+| `NEO4JPROXY_TARGET_USERNAME`      | `neo4j`             | The user name to authenticate with against the Neo4J server.                                             |
+| `NEO4JPROXY_TARGET_PASSWORD`      | `neo4j`             | The password to authenticate with against the Neo4J server.                                              |
 | `NEO4JPROXY_TARGET_PASSWORD_FILE` | `<none>`            | Mutually exclusive with the environment variable above. Typically used with Docker Swarm or k8s secrets. |
-| `NEO4JPROXY_AUTHORIZED_SCOPE`     | `neo4j`             | a comma-separated list of authorized scopes.                                                                                                        |
-| `NEO4JPROXY_AUTHORIZED_ROLE`      | `realm:neo4j-user`  | a comma-separated list of authorized Keycloak roles.                                                                                                         |
-| `NEO4JPROXY_PROTECTION`           | `true`              | Whether to secure the proxy with Keycloak or not.                                                                                                         |
-| `NEO4JPROXY_KEYCLOAK_CONFIG_FILE` | `./keycloak.json`   | The Keycloak OIDC configuration file to use.                                                                                                        |
+| `NEO4JPROXY_AUTHORIZED_SCOPE`     | `neo4j`             | a comma-separated list of authorized scopes.                                                             |
+| `NEO4JPROXY_AUTHORIZED_ROLE`      | `realm:neo4j-user`  | a comma-separated list of authorized Keycloak roles.                                                     |
+| `NEO4JPROXY_PROTECTION`           | `true`              | Whether to secure the proxy with Keycloak or not.                                                        |
+| `NEO4JPROXY_KEYCLOAK_CONFIG_FILE` | `./keycloak.json`   | The Keycloak OIDC configuration file to use.                                                             |
 
 ### Keycloak configuration file
 
